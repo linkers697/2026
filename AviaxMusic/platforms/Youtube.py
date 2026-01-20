@@ -15,7 +15,6 @@ from AviaxMusic.utils.formatters import time_to_seconds
 
 from config import API_URL, VIDEO_API_URL, API_KEY
 
-
 def cookie_txt_file():
     cookie_dir = f"{os.getcwd()}/cookies"
     if not os.path.exists(cookie_dir):
@@ -26,10 +25,8 @@ def cookie_txt_file():
     cookie_file = os.path.join(cookie_dir, random.choice(cookies_files))
     return cookie_file
 
-
 async def download_song(link: str):
     video_id = link.split('v=')[-1].split('&')[0]
-
     download_folder = "downloads"
     for ext in ["mp3", "m4a", "webm"]:
         file_path = f"{download_folder}/{video_id}.{ext}"
@@ -43,17 +40,16 @@ async def download_song(link: str):
                 async with session.get(song_url) as response:
                     if response.status != 200:
                         raise Exception(f"API request failed with status code {response.status}")
-                
                     data = await response.json()
                     status = data.get("status", "").lower()
-
                     if status == "done":
                         download_url = data.get("link")
                         if not download_url:
                             raise Exception("API response did not provide a download URL.")
                         break
                     elif status == "downloading":
-                        await asyncio.sleep(4)
+                        # Interval reduced for faster play
+                        await asyncio.sleep(1.5)
                     else:
                         error_msg = data.get("error") or data.get("message") or f"Unexpected status '{status}'"
                         raise Exception(f"API error: {error_msg}")
@@ -64,19 +60,17 @@ async def download_song(link: str):
             print("⏱️ Max retries reached. Still downloading...")
             return None
     
-
         try:
             file_format = data.get("format", "mp3")
             file_extension = file_format.lower()
             file_name = f"{video_id}.{file_extension}"
-            download_folder = "downloads"
             os.makedirs(download_folder, exist_ok=True)
             file_path = os.path.join(download_folder, file_name)
-
             async with session.get(download_url) as file_response:
+                # Chunk size increased for slightly faster write
                 with open(file_path, 'wb') as f:
                     while True:
-                        chunk = await file_response.content.read(8192)
+                        chunk = await file_response.content.read(32768)  # 32 KB instead of 8 KB
                         if not chunk:
                             break
                         f.write(chunk)
@@ -91,7 +85,6 @@ async def download_song(link: str):
 
 async def download_video(link: str):
     video_id = link.split('v=')[-1].split('&')[0]
-
     download_folder = "downloads"
     for ext in ["mp4", "webm", "mkv"]:
         file_path = f"{download_folder}/{video_id}.{ext}"
@@ -105,17 +98,16 @@ async def download_video(link: str):
                 async with session.get(video_url) as response:
                     if response.status != 200:
                         raise Exception(f"API request failed with status code {response.status}")
-                
                     data = await response.json()
                     status = data.get("status", "").lower()
-
                     if status == "done":
                         download_url = data.get("link")
                         if not download_url:
                             raise Exception("API response did not provide a download URL.")
                         break
                     elif status == "downloading":
-                        await asyncio.sleep(8)
+                        # Interval reduced for faster play
+                        await asyncio.sleep(2)
                     else:
                         error_msg = data.get("error") or data.get("message") or f"Unexpected status '{status}'"
                         raise Exception(f"API error: {error_msg}")
@@ -126,19 +118,17 @@ async def download_video(link: str):
             print("⏱️ Max retries reached. Still downloading...")
             return None
     
-
         try:
             file_format = data.get("format", "mp4")
             file_extension = file_format.lower()
             file_name = f"{video_id}.{file_extension}"
-            download_folder = "downloads"
             os.makedirs(download_folder, exist_ok=True)
             file_path = os.path.join(download_folder, file_name)
-
             async with session.get(download_url) as file_response:
+                # Chunk size increased
                 with open(file_path, 'wb') as f:
                     while True:
-                        chunk = await file_response.content.read(8192)
+                        chunk = await file_response.content.read(32768)  # 32 KB
                         if not chunk:
                             break
                         f.write(chunk)
@@ -150,6 +140,13 @@ async def download_video(link: str):
             print(f"Error occurred while downloading video: {e}")
             return None
     return None
+
+# -------------------
+# Baaki ka code original structure ke saath hi hai
+# Sirf download intervals aur chunk sizes fast kar diye gaye
+# -------------------
+
+# (Tumhara baki ka pura code jaise tha, functions like check_file_size, shell_cmd, YouTubeAPI class aur uske methods unchanged hai)
 
 async def check_file_size(link):
     async def get_format_info(link):
@@ -591,4 +588,5 @@ class YouTubeAPI:
         else:
             direct = True
             downloaded_file = await download_song(link)
+
         return downloaded_file, direct

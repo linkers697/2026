@@ -1,4 +1,6 @@
 import re
+import random
+import requests
 from os import getenv
 
 from dotenv import load_dotenv
@@ -25,56 +27,70 @@ LOG_GROUP_ID = int(getenv("LOG_GROUP_ID", None))
 OWNER_ID = int(getenv("OWNER_ID", None))
 
 ## Fill these variables if you're deploying on heroku.
-# Your heroku app name
 HEROKU_APP_NAME = getenv("HEROKU_APP_NAME")
-# Get it from http://dashboard.heroku.com/account
 HEROKU_API_KEY = getenv("HEROKU_API_KEY")
 
-API_URL = getenv("API_URL", 'https://api2.nexgenbots.xyz') #youtube song url
-VIDEO_API_URL = getenv("VIDEO_API_URL", 'https://api.video.nexgenbots.xyz')
-API_KEY = getenv("API_KEY", None) # youtube song api key, generate free key or buy paid plan from https://console.nexgenbots.xyz
+# ================= API CONFIG (MULTI API SUPPORT) ================= #
+
+API_URLS = [
+    "https://api.nexgenbots.xyz",
+    "https://api2.nexgenbots.xyz",
+    "https://api3.nexgenbots.xyz"
+]
+
+VIDEO_API_URL = getenv("VIDEO_API_URL", "https://api.video.nexgenbots.xyz")
+API_KEY = getenv("API_KEY", None)
+
+
+def get_working_api():
+    urls = API_URLS.copy()
+    random.shuffle(urls)
+
+    for api in urls:
+        try:
+            r = requests.get(api, timeout=3)
+            if r.status_code == 200:
+                return api
+        except:
+            pass
+
+    # Safe fallback
+    return "https://api3.nexgenbots.xyz"
+
+
+API_URL = getenv("API_URL") or get_working_api()
+
+# ================================================================ #
 
 UPSTREAM_REPO = getenv(
     "UPSTREAM_REPO",
     "https://t.me/AuraPromotion",
 )
 UPSTREAM_BRANCH = getenv("UPSTREAM_BRANCH", "master")
-GIT_TOKEN = getenv(
-    "GIT_TOKEN", None
-)  # Fill this variable if your upstream repository is private
+GIT_TOKEN = getenv("GIT_TOKEN", None)
 
 SUPPORT_CHANNEL = getenv("SUPPORT_CHANNEL", "https://t.me/Elvexer")
 SUPPORT_GROUP = getenv("SUPPORT_GROUP", "https://t.me/friends_hindi_chatting_grp")
 
-# Set this to True if you want the assistant to automatically leave chats after an interval
 AUTO_LEAVING_ASSISTANT = bool(getenv("AUTO_LEAVING_ASSISTANT", False))
 
-# make your bots privacy from telegra.ph and put your url here 
-PRIVACY_LINK = getenv("PRIVACY_LINK", "https://telegra.ph/Privacy-Policy-for-AviaxMusic-08-14")
+PRIVACY_LINK = getenv(
+    "PRIVACY_LINK", "https://telegra.ph/Privacy-Policy-for-AviaxMusic-08-14"
+)
 
-
-# Get this credentials from https://developer.spotify.com/dashboard
 SPOTIFY_CLIENT_ID = getenv("SPOTIFY_CLIENT_ID", None)
 SPOTIFY_CLIENT_SECRET = getenv("SPOTIFY_CLIENT_SECRET", None)
 
-
-# Maximum limit for fetching playlist's track from youtube, spotify, apple links.
 PLAYLIST_FETCH_LIMIT = int(getenv("PLAYLIST_FETCH_LIMIT", 25))
 
-
-# Telegram audio and video file size limit (in bytes)
 TG_AUDIO_FILESIZE_LIMIT = int(getenv("TG_AUDIO_FILESIZE_LIMIT", 104857600))
 TG_VIDEO_FILESIZE_LIMIT = int(getenv("TG_VIDEO_FILESIZE_LIMIT", 2145386496))
-# Checkout https://www.gbmb.org/mb-to-bytes for converting mb to bytes
 
-
-# Get your pyrogram v2 session from Replit
 STRING1 = getenv("STRING_SESSION", None)
 STRING2 = getenv("STRING_SESSION2", None)
 STRING3 = getenv("STRING_SESSION3", None)
 STRING4 = getenv("STRING_SESSION4", None)
 STRING5 = getenv("STRING_SESSION5", None)
-
 
 BANNED_USERS = filters.user()
 adminlist = {}
@@ -83,13 +99,8 @@ votemode = {}
 autoclean = []
 confirmer = {}
 
-
-START_IMG_URL = getenv(
-    "START_IMG_URL", "https://files.catbox.moe/dkyy20.jpg"
-)
-PING_IMG_URL = getenv(
-    "PING_IMG_URL", "https://graph.org//file/389a372e8ae039320ca6c.png"
-)
+START_IMG_URL = getenv("START_IMG_URL", "https://files.catbox.moe/dkyy20.jpg")
+PING_IMG_URL = getenv("PING_IMG_URL", "https://graph.org//file/389a372e8ae039320ca6c.png")
 PLAYLIST_IMG_URL = "https://graph.org//file/3dfcffd0c218ead96b102.png"
 STATS_IMG_URL = "https://graph.org//file/99a8a9c13bb01f9ac7d98.png"
 TELEGRAM_AUDIO_URL = "https://graph.org//file/2f7debf856695e0ef0607.png"
@@ -109,7 +120,6 @@ def time_to_seconds(time):
 
 DURATION_LIMIT = int(time_to_seconds(f"{DURATION_LIMIT_MIN}:00"))
 
-
 if SUPPORT_CHANNEL:
     if not re.match("(?:http|https)://", SUPPORT_CHANNEL):
         raise SystemExit(
@@ -121,7 +131,3 @@ if SUPPORT_GROUP:
         raise SystemExit(
             "[ERROR] - Your SUPPORT_GROUP url is wrong. Please ensure that it starts with https://"
         )
-
-
-
-
